@@ -16,7 +16,7 @@ from rest_framework.generics import (
     RetrieveUpdateAPIView,
     DestroyAPIView,
     GenericAPIView,
-    UpdatedAPIView,
+    UpdateAPIView,
 )
 from rest_framework.views import APIView
 # Importamos librerías para gestionar los permisos de acceso a nuestras APIs
@@ -286,5 +286,67 @@ class LoginUserAPIView(APIView):
 
 # TODO: Agregar las vistas genericas(vistas de API basadas en clases) 
 # que permitan realizar un CRUD del modelo de wish-list.
+
+class GetWishListAPIView(ListAPIView):
+    queryset = WishList.objects.all()
+    serializer_class = WishListSerializer
+    permission_classes = [IsAuthenticated & IsAdminUser,]
+
+
+class PostWishListAPIView(CreateAPIView):
+    queryset = WishList.objects.all()
+    serializer_class = WishListSerializer
+    permission_classes = [IsAuthenticated]
+
+
+class UpdateWishListAPIView(UpdateAPIView):
+    queryset = WishList.objects.all()
+    serializer_class = WishListSerializer
+    permission_classes = (IsAuthenticated,)
+    lookup_field = 'pk'
+
+    def put(self, request, *args, **kwargs):
+        _serializer = self.get_serializer(
+            instance=self.get_object(),
+            data=request.data,
+            many=False,
+            partial=True
+        )
+        if _serializer.is_valid():
+            _serializer.save()
+            return Response(data=_serializer.data, status=status.HTTP_200_OK)
+        return Response(
+            data=_serializer.errors, status=status.HTTP_400_BAD_REQUEST
+        )
+
+
+class DeleteWishListAPIView(DestroyAPIView):
+    queryset = WishList.objects.all()
+    serializer_class = WishListSerializer
+    permission_classes = [IsAuthenticated]
+    lookup_field = 'pk'
+
+    def get_queryset(self):
+        queryset = queryset.filter(user=self.request.user)
+        return queryset
+
 # TODO: Crear una vista generica modificada(vistas de API basadas en clases)
 # para traer todos los comics que tiene un usuario.
+
+class GetUserFavsAPIView(ListAPIView):
+    queryset = WishList.objects.all()
+    serializer_class = WishListSerializer
+    permission_classes = [IsAuthenticated]
+    #lookup_field = 'user_id'
+
+    def get_queryset(self):
+        user = User.objects.filter(username=self.request.user.username)
+        print(user)
+
+        wish_list = WishList.objects.filter(user=user.first(), favorite=True)
+
+        return(wish_list)
+    
+
+
+
